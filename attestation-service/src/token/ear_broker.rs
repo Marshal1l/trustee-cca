@@ -250,8 +250,13 @@ impl AttestationTokenBroker for EarAttestationTokenBroker {
         for (k, v) in &policy_results.rules_result {
             let claim_value = v.as_i8().context("Policy claim value not i8")?;
 
-            let k = k.replace("_", "-");
-
+            let k = if k == "runtime_opaque" {
+                k.replace("_", "-")
+            } else if k == "instance_identity" {
+                k.replace("_", "-") //Replace
+            } else {
+                k.to_string()
+            };
             appraisal
                 .trust_vector
                 .mut_by_name(&k)
@@ -424,16 +429,15 @@ pub fn transform_claims(
             output_claims.insert("init_data_claims".to_string(), transformed_claims);
         }
 
-        if let Some(report_data) = claims_map.remove("report_data") {
-            output_claims.insert(
-                "report_data".to_string(),
-                RawValue::Text(report_data.as_str().unwrap().to_string()),
-            );
+        // if let Some(report_data) = claims_map.remove("report_data") {
+        //     output_claims.insert(
+        //         "report_data".to_string(),
+        //         RawValue::Text(report_data.as_str().unwrap().to_string()),
+        //     );
 
-            let transformed_claims: RawValue =
-                serde_json::from_str(&serde_json::to_string(&runtime_data_claims)?)?;
-            output_claims.insert("runtime_data_claims".to_string(), transformed_claims);
-        }
+        let transformed_claims: RawValue =
+            serde_json::from_str(&serde_json::to_string(&runtime_data_claims)?)?;
+        output_claims.insert("runtime_data_claims".to_string(), transformed_claims);
     }
 
     let transformed_claims: RawValue =
